@@ -1,0 +1,10 @@
+[package]
+name = "ternary-clustering"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Clustering algorithms for ternary data {-1, 0, +1}"
+keywords = ["ternary", "clustering", "kmeans", "dbscan", "hierarchical"]
+categories = ["algorithms", "mathematics", "science"]
+
+[dependencies]
