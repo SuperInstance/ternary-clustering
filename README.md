@@ -1,108 +1,87 @@
 # ternary-clustering
 
-Clustering algorithms for ternary-valued data vectors (`-1`, `0`, `+1`).
+**# ternary-clustering  Clustering algorithms for ternary data represented as vectors of `Ternary` ...**
 
-## Why This Exists
+[![ternary](https://img.shields.io/badge/ecosystem-ternary-blue)](https://github.com/orgs/SuperInstance/repositories?q=ternary)
+[![tests](https://img.shields.io/badge/tests-23-green)]()
 
-Most clustering libraries assume continuous or binary data. But many real-world systems produce ternary signals — sentiment (negative/neutral/positive), market direction (down/flat/up), sensor states (low/normal/high), or trimmed gene expression. Standard K-means and DBSCAN lose structural information when you encode ternary values as floats. This crate provides clustering algorithms that respect ternary geometry from the ground up: Hamming distance for DBSCAN, ternary-space centroid computation for K-means, and proper cluster validity indices that understand ternary distances.
+## Overview
 
-## Core Concepts
+# ternary-clustering
 
-- **`Ternary`** — An enum with three variants: `Neg` (-1), `Zero` (0), `Pos` (+1). All data is represented as vectors of these values.
-- **Hamming distance** — Counts positions where two ternary vectors differ. The natural distance metric for discrete ternary data.
-- **Ternary centroid** — The mean of a cluster's ternary vectors, rounded back to ternary values via thresholding at ±0.5.
+Clustering algorithms for ternary data represented as vectors of `Ternary` values
+(`-1`, `0`, `+1`). Provides K-means adapted for ternary spaces, DBSCAN with ternary
+Hamming distance, hierarchical (agglomerative) clustering, and cluster validity
+indices (silhouette score, Davies-Bouldin index).
 
-## Quick Start
+## Architecture
 
-```toml
-# Cargo.toml
-[dependencies]
-ternary-clustering = "0.1"
-```
+- **`Ternary`** — state enumeration
+- **`Linkage`** — state enumeration
 
-```rust
-use ternary_clustering::*;
+### Key Functions
 
-fn main() {
-    // Build a dataset of ternary vectors
-    let data = vec![
-        vec![Ternary::Pos, Ternary::Pos, Ternary::Pos],
-        vec![Ternary::Pos, Ternary::Pos, Ternary::Zero],
-        vec![Ternary::Neg, Ternary::Neg, Ternary::Neg],
-        vec![Ternary::Neg, Ternary::Neg, Ternary::Zero],
-    ];
+- `to_i8()`
+- `from_i8()`
+- `ternary_sq_distance()`
+- `hamming_distance()`
+- `nearest_centroid()`
+- `compute_centroid()`
+- `kmeans()`
+- `dbscan()`
+- `hierarchical()`
+- `silhouette_score()`
+- ... and 1 more
 
-    // K-means with k=2
-    let (assignments, centroids) = kmeans(&data, 2, 100);
-    println!("Assignments: {:?}", assignments);
-    println!("Centroids: {:?}", centroids);
+## Why Ternary?
 
-    // DBSCAN clustering
-    let labels = dbscan(&data, 1, 2);
-    println!("DBSCAN labels: {:?}", labels);
+The balanced ternary system {-1, 0, +1} (also known as Z₃) is the mathematically optimal discrete encoding:
+- **More expressive than binary**: three states capture positive, neutral, and negative
+- **Natural for decisions**: accept/reject/abstain, buy/hold/sell, agree/disagree/neutral
+- **Self-balancing**: the 0 state acts as a universal screen, preventing pathological lock-in
+- **Z₃ cyclic dynamics**: rock-paper-scissors is the only natural coordination mechanism
 
-    // Evaluate with silhouette score
-    let score = silhouette_score(&data, &assignments);
-    println!("Silhouette score: {:.4}", score);
-}
-```
+## Stats
 
-## API Overview
-
-### Distance Functions
-- `ternary_sq_distance(a, b)` — Squared Euclidean distance between ternary vectors
-- `hamming_distance(a, b)` — Number of differing positions
-
-### Clustering Algorithms
-- `kmeans(data, k, max_iters)` — K-means adapted for ternary spaces. Returns cluster assignments and centroids.
-- `dbscan(data, eps, min_pts)` — Density-based clustering using Hamming distance. Returns `Option<usize>` labels (`None` = noise).
-- `hierarchical(data, linkage)` — Agglomerative clustering. Returns a dendrogram as merge steps `(cluster_a, cluster_b, distance)`.
-
-### Linkage Criteria
-- `Linkage::Single` — Minimum inter-cluster distance
-- `Linkage::Complete` — Maximum inter-cluster distance
-- `Linkage::Average` — Average inter-cluster distance
-
-### Cluster Validity
-- `silhouette_score(data, assignments)` — Mean silhouette coefficient (−1 to +1; higher is better)
-- `davies_bouldin_index(data, assignments, centroids)` — Davies-Bouldin index (≥0; lower is better)
-
-### Utilities
-- `nearest_centroid(point, centroids)` — Index of the closest centroid
-- `compute_centroid(points)` — Ternary centroid of a point set
-
-## How It Works
-
-**K-means** initializes centroids by selecting evenly-spaced data points, then alternates between assigning each point to its nearest centroid (using squared Euclidean distance) and recomputing centroids by averaging member vectors and rounding back to ternary.
-
-**DBSCAN** pre-computes all pairwise Hamming distances to find ε-neighborhoods, then expands clusters from core points (those with ≥ `min_pts` neighbors). Points not reachable from any core point are labeled as noise.
-
-**Hierarchical clustering** starts with each point as its own cluster, then iteratively merges the closest pair according to the chosen linkage criterion. Pairwise Hamming distances are pre-computed once; cluster distances are derived from these.
-
-**Silhouette score** computes for each point the ratio of inter-cluster distance to intra-cluster distance. The mean across all points measures overall clustering quality.
-
-**Davies-Bouldin index** averages, across all clusters, the worst-case similarity ratio between each cluster and its most similar neighbor.
-
-## Use Cases
-
-1. **Sentiment analysis grouping** — Cluster documents represented as ternary sentiment vectors (negative/neutral/positive per feature) into opinion groups.
-2. **Financial signal classification** — Group market indicators (down/flat/up per metric) to identify regime patterns.
-3. **Genomic data clustering** — Cluster gene expression profiles after ternarization (underexpressed/normal/overexpressed) to find co-regulated gene groups.
+| Metric | Value |
+|--------|-------|
+| Lines of Rust | 631 |
+| Test count | 23 |
+| Public types | 2 |
+| Public functions | 11 |
 
 ## Ecosystem
 
-- [`ternary-projection`](https://github.com/user/ternary-projection) — Dimensionality reduction for ternary data (PCA, t-SNE, random projection)
-- [`ternary-graph`](https://github.com/user/ternary-graph) — Graph algorithms on ternary-weighted edges
-- [`ternary-streaming`](https://github.com/user/ternary-streaming) — Streaming processing for ternary signals
+This crate is part of the **[SuperInstance Ternary Fleet](https://github.com/orgs/SuperInstance/repositories?q=ternary)**:
+
+- **[ternary-core](https://github.com/SuperInstance/ternary-core)** — shared traits and Z₃ arithmetic
+- **[ternary-grid](https://github.com/SuperInstance/ternary-grid)** — spatial grid with {-1, 0, +1} cells
+- **[ternary-graph](https://github.com/SuperInstance/ternary-graph)** — ternary-weighted graph algorithms
+- **[ternary-automata](https://github.com/SuperInstance/ternary-automata)** — three-state cellular automata
+- **[ternary-compiler](https://github.com/SuperInstance/ternary-compiler)** — expression compiler and optimizer
+
+200+ crates. 4,300+ tests. One pattern.
+
+## Research Context
+
+The ternary approach connects to several active research areas:
+- **Ternary Neural Networks** (TNNs): weights constrained to {-1, 0, +1} for efficient inference
+- **Huawei's ternary chip**: 7nm ternary silicon with 60% less power consumption
+- **Active inference**: free energy minimization naturally maps to ternary action selection
+- **Cyclic dominance**: RPS dynamics maintain biodiversity in spatial ecology
+- **Z₃ group theory**: the only algebraic group on three elements is cyclic addition mod 3
+
+## Usage
+
+```toml
+[dependencies]
+ternary-clustering = "0.1.0"
+```
+
+```rust
+use ternary_clustering;
+```
 
 ## License
 
 MIT
-
-## See Also
-- **ternary-pca** — related
-- **ternary-projection** — related
-- **ternary-topology** — related
-- **ternary-graph** — related
-- **ternary-network** — related
-
