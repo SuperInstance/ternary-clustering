@@ -98,3 +98,11 @@ fn main() {
 ## License
 
 MIT
+
+## See Also
+- **ternary-pca** — related
+- **ternary-projection** — related
+- **ternary-topology** — related
+- **ternary-graph** — related
+- **ternary-network** — related
+
